@@ -1,61 +1,66 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <ucontext.h>
 
-/// @see https://habr.com/ru/articles/519464/
-static ucontext_t caller_context;
-static ucontext_t coroutine_context;
+#define STACK_SIZE 1000
 
-void print_hello_and_suspend() {
-  // выводим Hello
-  printf("Hello");
-  // точка передачи управления вызывающей стороне,
-  // переключаемся на контекст caller_context
-  // в контексте сопрограммы coroutine_context сохраняется текущая точка
-  // выполнения, после возвращения контроля, выполнение продолжится с этой
-  // точки.
-  swapcontext(&coroutine_context, &caller_context);
+typedef struct {
+  ucontext_t internal;
+} coroutine_context;
+
+typedef struct {
+  coroutine_context caller_context;
+  coroutine_context this_context;
+} coroutine;
+
+coroutine *coroutine_new(void (*procedure)(coroutine *)) {
+  coroutine *coro = malloc(sizeof(coroutine));
+  coro->this_context.internal.uc_link = &coro->caller_context.internal;
+  coro->this_context.internal.uc_stack.ss_sp = malloc(STACK_SIZE);
+  coro->this_context.internal.uc_stack.ss_size = STACK_SIZE;
+  getcontext(&coro->this_context.internal);
+  makecontext(&coro->this_context.internal, (void (*)(void))procedure, 1, coro);
+  return coro;
 }
 
-void simple_coroutine() {
-  // точка первой передачи управления в coroutine_context
-  // чтобы продемонстрировать преимущества использование стека
-  // выполним вложенный вызов функции print_hello_and_suspend.
-  print_hello_and_suspend();
-  // функция print_hello_and_suspend приостановила выполнение сопрограммы
-  // после того как управление вернётся мы выведем Coroutine! и завершим работу,
-  // управление будет передано контексту,
-  // указатель на который хранится в coroutine_context.uc_link, т.е.
-  // caller_context
+void coroutine_yield(coroutine *coroutine) {
+  swapcontext(&coroutine->this_context.internal,
+              &coroutine->caller_context.internal);
+}
+
+void coroutine_next(coroutine *coroutine) {
+  swapcontext(&coroutine->caller_context.internal,
+              &coroutine->this_context.internal);
+}
+
+void coroutine_free(coroutine *coroutine) {
+  // TODO(vityaman): free(): invalid pointer
+  // free(coroutine->caller_context.internal.uc_stack.ss_sp);
+
+  // TODO(vityaman): free(): invalid next size (normal)
+  // free(coroutine);
+}
+
+void print_hello_and_suspend(coroutine *this) {
+  printf("Hello");
+  coroutine_yield(this);
+  printf("hello");
+  coroutine_yield(this);
+}
+
+void simple_coroutine(coroutine *this) {
+  print_hello_and_suspend(this);
   printf("Coroutine!\n");
 }
 
 int main() {
-  // Стек сопрограммы.
-  char stack[256];
-
-  // Инициализация контекста сопрограммы coroutine_context
-  // uc_link указывает на caller_context, точку возврата при завершении
-  // сопрограммы. uc_stack хранит указатель и размер стека
-  coroutine_context.uc_link = &caller_context;
-  coroutine_context.uc_stack.ss_sp = stack;
-  coroutine_context.uc_stack.ss_size = sizeof(stack);
-  getcontext(&coroutine_context);
-
-  // Заполнение coroutine_context
-  // Контекст настраивается таким образом, что переключаясь на него
-  // исполнение начинается с точки входа в функцию simple_coroutine
-  makecontext(&coroutine_context, simple_coroutine, 0);
-
-  // передаем управление сопрограмме, переключаемся на контекст
-  // coroutine_context в контексте caller_context сохраняется текущая точка
-  // выполнения, после возвращения контроля, выполнение продолжится с этой
-  // точки.
-  swapcontext(&caller_context, &coroutine_context);
-  // сопрограмма приостановила свое выполнение и вернула управление
-  // выводим пробел
+  coroutine *coroutine = coroutine_new(simple_coroutine);
+  coroutine_next(coroutine);
+  printf("-");
+  coroutine_next(coroutine);
   printf(" ");
-  // передаём управление обратно сопрограмме.
-  swapcontext(&caller_context, &coroutine_context);
-
+  coroutine_next(coroutine);
+  coroutine_free(coroutine);
+  printf("We are still alive here\n");
   return 0;
 }
