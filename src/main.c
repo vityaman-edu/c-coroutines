@@ -2,34 +2,35 @@
 #include <stdio.h>
 
 #define coroutine_start()                                                      \
-  switch (this->label) {                                                 \
+  switch (this->label) {                                                       \
   case 0: {
 
 #define coroutine_yield()                                                      \
-  this->label = __LINE__;                                                \
+  this->label = __LINE__;                                                      \
   }                                                                            \
   break;                                                                       \
   case __LINE__: {
 
 #define coroutine_finish()                                                     \
-  this->label = -1;                                                      \
+  this->label = -1;                                                            \
   }                                                                            \
   break;                                                                       \
   }
 
-#define coroutine_define(name) void name(struct coroutine *this)
+#define coroutine_define(name)                                                 \
+  struct coroutine_##name {                                                     \
+    int label;                                                                 \
+    void (*const procedure)(struct coroutine_##name *);                         \
+  };                                                                           \
+                                                                               \
+  void name(struct coroutine_##name *this)
 
 #define coroutine_create(name, type)                                           \
-  struct coroutine name = (struct coroutine) {                                 \
-    .label = 0, .procedure = &type,                                      \
+  struct coroutine_##type name = (struct coroutine_##type) {                          \
+    .label = 0, .procedure = &type,                                            \
   }
 
 #define coroutine_next(instance) instance.procedure(&instance)
-
-struct coroutine {
-  int label;
-  void (*const procedure)(struct coroutine *);
-};
 
 coroutine_define(hello_world) {
   coroutine_start();
