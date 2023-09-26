@@ -17,22 +17,22 @@
   break;                                                                       \
   }
 
-#define coroutine_define(name)                                                 \
-  struct coroutine_##name {                                                     \
+#define coroutine_declare(name)                                                 \
+  struct coroutine_##name {                                                    \
     int label;                                                                 \
-    void (*const procedure)(struct coroutine_##name *);                         \
+    void (*const procedure)(struct coroutine_##name *);                        \
   };                                                                           \
                                                                                \
   void name(struct coroutine_##name *this)
 
-#define coroutine_create(instance, name)                                           \
-  struct coroutine_##name instance = (struct coroutine_##name) {                          \
+#define coroutine_create(instance, name)                                       \
+  struct coroutine_##name instance = (struct coroutine_##name) {               \
     .label = 0, .procedure = &name,                                            \
   }
 
 #define coroutine_next(instance) instance.procedure(&instance)
 
-coroutine_define(hello_world) {
+coroutine_declare(hello_world) {
   coroutine_start();
   printf("Hello");
   coroutine_yield();
