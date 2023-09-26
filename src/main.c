@@ -29,9 +29,10 @@
   } break;                                                                     \
     }
 
-#define coroutine_declare(yield_type, name)                                    \
+#define coroutine_declare(yield_type, name, members)                           \
   struct coroutine_##name {                                                    \
     int label;                                                                 \
+    members;                                                                   \
     yield_type (*const procedure)(struct coroutine_##name *);                  \
   };                                                                           \
                                                                                \
@@ -47,25 +48,30 @@
 
 #define coroutine_next(instance) instance.procedure(&instance)
 
-coroutine_declare(void, hello_world);
+coroutine_declare(int, hello_world, int i);
 
-coroutine_define(void, hello_world) {
+coroutine_define(int, hello_world) {
   coroutine_start();
   printf("Hello\n");
-  coroutine_yield();
+  ++this->i;
+  coroutine_yield(this->i);
   printf(",\n");
-  coroutine_yield();
+  ++this->i;
+  coroutine_yield(this->i);
   printf("World\n");
-  coroutine_yield();
+  ++this->i;
+  coroutine_yield(this->i);
   printf("!\n");
-  coroutine_finish();
+  ++this->i;
+  coroutine_finish(this->i);
 }
 
 int main() {
   coroutine_create(hello, hello_world);
-  coroutine_next(hello);
-  coroutine_next(hello);
-  coroutine_next(hello);
-  coroutine_next(hello);
+  printf("yeilds %d\n", coroutine_next(hello));
+  printf("yeilds %d\n", coroutine_next(hello));
+  printf("yeilds %d\n", coroutine_next(hello));
+  printf("yeilds %d\n", coroutine_next(hello));
+  printf("yeilds %d\n", coroutine_next(hello));
   printf("label = %d\n", hello.label);
 }
