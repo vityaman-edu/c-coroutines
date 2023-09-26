@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.22.1)
 set(ARTIFACT c-coroutines)
 project(${ARTIFACT})
 
-set(CMAKE_BUILD_TYPE "debug")
+set(CMAKE_BUILD_TYPE "release")
 set(CMAKE_C_STANDARD "17")
 set(CMAKE_C_COMPILER "clang")
 set(C_COMMON_FLAGS "-std=c17 -Wall -Werror")
