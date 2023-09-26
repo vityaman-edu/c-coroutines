@@ -25,9 +25,9 @@
                                                                                \
   void name(struct coroutine_##name *this)
 
-#define coroutine_create(name, type)                                           \
-  struct coroutine_##type name = (struct coroutine_##type) {                          \
-    .label = 0, .procedure = &type,                                            \
+#define coroutine_create(instance, name)                                           \
+  struct coroutine_##name instance = (struct coroutine_##name) {                          \
+    .label = 0, .procedure = &name,                                            \
   }
 
 #define coroutine_next(instance) instance.procedure(&instance)
