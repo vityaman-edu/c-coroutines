@@ -1,14 +1,12 @@
 #include <assert.h>
 #include <stdio.h>
 
-#define BLANK \
-
 #define coroutine_start()                                                      \
   switch (this->state.label) {                                                 \
   case 0: {
 
 #define coroutine_yield()                                                      \
-  this->state.label = __LINE__;                                            \
+  this->state.label = __LINE__;                                                \
   }                                                                            \
   break;                                                                       \
   case __LINE__: {
@@ -19,13 +17,28 @@
   break;                                                                       \
   }
 
+#define coroutine_define(name) void name(struct coroutine *this)
+
+#define coroutine_create(name, type)                                           \
+  struct coroutine name = coroutine_new(&type)
+
+#define coroutine_next(instance) instance.procedure(&instance)
+
 struct coroutine {
   struct {
     int label;
   } state;
+  void (*const procedure)(struct coroutine *);
 };
 
-void hello_world(struct coroutine *this) {
+struct coroutine coroutine_new(void (*procedure)(struct coroutine *)) {
+  return (struct coroutine){
+      .state.label = 0,
+      .procedure = procedure,
+  };
+}
+
+coroutine_define(hello_world) {
   coroutine_start();
   printf("Hello");
   coroutine_yield();
@@ -42,13 +55,12 @@ void hello_world(struct coroutine *this) {
 }
 
 int main() {
-  struct coroutine hello;
-  hello.state.label = 0;
-  hello_world(&hello);
-  hello_world(&hello);
-  hello_world(&hello);
-  hello_world(&hello);
-  hello_world(&hello);
-  hello_world(&hello);
+  coroutine_create(hello, hello_world);
+  coroutine_next(hello);
+  coroutine_next(hello);
+  coroutine_next(hello);
+  coroutine_next(hello);
+  coroutine_next(hello);
+  coroutine_next(hello);
   printf("label = %d\n", hello.state.label);
 }
