@@ -4,7 +4,7 @@ IndentWidth: 2
 ColumnLimit: 80
 
 ---
-Language: C
+Language: Cpp
 AlignAfterOpenBracket: BlockIndent
 AlwaysBreakTemplateDeclarations: Yes
 BinPackArguments: false
