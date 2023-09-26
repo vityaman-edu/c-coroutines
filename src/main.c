@@ -5,27 +5,40 @@
   switch (this->label) {                                                       \
   case 0: {
 
-#define coroutine_yield()                                                      \
+#define coroutine_suspend()                                                    \
   this->label = __LINE__;                                                      \
   }                                                                            \
   break;                                                                       \
   case __LINE__: {
 
-#define coroutine_finish()                                                     \
-  this->label = -1;                                                            \
+#define coroutine_yield(val)                                                   \
+  this->label = __LINE__;                                                      \
+  return val;                                                                  \
   }                                                                            \
   break;                                                                       \
-  }
+  case __LINE__: {
 
-#define coroutine_declare(name)                                                \
+#define coroutine_finish(val)                                                  \
+  this->label = -1;                                                            \
+  return val;                                                                  \
+  }                                                                            \
+  break;                                                                       \
+  default: {                                                                   \
+    this->label = -1;                                                          \
+    return val;                                                                \
+  } break;                                                                     \
+    }
+
+#define coroutine_declare(yield_type, name)                                    \
   struct coroutine_##name {                                                    \
     int label;                                                                 \
-    void (*const procedure)(struct coroutine_##name *);                        \
+    yield_type (*const procedure)(struct coroutine_##name *);                  \
   };                                                                           \
                                                                                \
-  void name(struct coroutine_##name *this)
+  yield_type name(struct coroutine_##name *this)
 
-#define coroutine_define(name) void name(struct coroutine_##name *this)
+#define coroutine_define(yield_type, name)                                     \
+  yield_type name(struct coroutine_##name *this)
 
 #define coroutine_create(instance, name)                                       \
   struct coroutine_##name instance = (struct coroutine_##name) {               \
@@ -34,28 +47,22 @@
 
 #define coroutine_next(instance) instance.procedure(&instance)
 
-coroutine_declare(hello_world);
+coroutine_declare(void, hello_world);
 
-coroutine_define(hello_world) {
+coroutine_define(void, hello_world) {
   coroutine_start();
-  printf("Hello");
+  printf("Hello\n");
   coroutine_yield();
-  printf(",");
+  printf(",\n");
   coroutine_yield();
-  printf(" ");
+  printf("World\n");
   coroutine_yield();
-  printf("World");
-  coroutine_yield();
-  printf("!");
-  coroutine_yield();
-  printf("\n");
+  printf("!\n");
   coroutine_finish();
 }
 
 int main() {
   coroutine_create(hello, hello_world);
-  coroutine_next(hello);
-  coroutine_next(hello);
   coroutine_next(hello);
   coroutine_next(hello);
   coroutine_next(hello);
