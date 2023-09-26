@@ -2,17 +2,17 @@
 #include <stdio.h>
 
 #define coroutine_start()                                                      \
-  switch (this->state.label) {                                                 \
+  switch (this->label) {                                                 \
   case 0: {
 
 #define coroutine_yield()                                                      \
-  this->state.label = __LINE__;                                                \
+  this->label = __LINE__;                                                \
   }                                                                            \
   break;                                                                       \
   case __LINE__: {
 
 #define coroutine_finish()                                                     \
-  this->state.label = -1;                                                      \
+  this->label = -1;                                                      \
   }                                                                            \
   break;                                                                       \
   }
@@ -20,23 +20,16 @@
 #define coroutine_define(name) void name(struct coroutine *this)
 
 #define coroutine_create(name, type)                                           \
-  struct coroutine name = coroutine_new(&type)
+  struct coroutine name = (struct coroutine) {                                 \
+    .label = 0, .procedure = &type,                                      \
+  }
 
 #define coroutine_next(instance) instance.procedure(&instance)
 
 struct coroutine {
-  struct {
-    int label;
-  } state;
+  int label;
   void (*const procedure)(struct coroutine *);
 };
-
-struct coroutine coroutine_new(void (*procedure)(struct coroutine *)) {
-  return (struct coroutine){
-      .state.label = 0,
-      .procedure = procedure,
-  };
-}
 
 coroutine_define(hello_world) {
   coroutine_start();
@@ -62,5 +55,5 @@ int main() {
   coroutine_next(hello);
   coroutine_next(hello);
   coroutine_next(hello);
-  printf("label = %d\n", hello.state.label);
+  printf("label = %d\n", hello.label);
 }
