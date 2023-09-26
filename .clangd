@@ -1,0 +1,22 @@
+CompileFlags:
+  Add: [-Wall]
+  Compiler: clang
+
+Diagnostics:
+  UnusedIncludes: Strict
+  ClangTidy:
+    Add: "*"
+    Remove: [
+      "android-cloexec-pipe",
+      "concurrency-mt-unsafe",
+      "bugprone-easily-swappable-parameters",
+      "altera-struct-pack-align",
+      "altera-id-dependent-backward-branch",
+      "altera-unroll-loops",
+      "llvmlibc-restrict-system-libc-headers"
+    ]
+
+InlayHints:
+  Designators: No
+  Enabled: No
+  DeducedTypes: No
