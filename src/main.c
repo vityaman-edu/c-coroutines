@@ -17,13 +17,15 @@
   break;                                                                       \
   }
 
-#define coroutine_declare(name)                                                 \
+#define coroutine_declare(name)                                                \
   struct coroutine_##name {                                                    \
     int label;                                                                 \
     void (*const procedure)(struct coroutine_##name *);                        \
   };                                                                           \
                                                                                \
   void name(struct coroutine_##name *this)
+
+#define coroutine_define(name) void name(struct coroutine_##name *this)
 
 #define coroutine_create(instance, name)                                       \
   struct coroutine_##name instance = (struct coroutine_##name) {               \
@@ -32,7 +34,9 @@
 
 #define coroutine_next(instance) instance.procedure(&instance)
 
-coroutine_declare(hello_world) {
+coroutine_declare(hello_world);
+
+coroutine_define(hello_world) {
   coroutine_start();
   printf("Hello");
   coroutine_yield();
